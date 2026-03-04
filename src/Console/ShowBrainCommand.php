@@ -15,8 +15,10 @@ class ShowBrainCommand extends Command
      * @var string
      */
     protected $signature = 'brain:show
-        {--p|processes : Show only processes and their sub-tasks}
-        {--t|tasks : Show only tasks}
+        {--w|workflows : Show only workflows and their sub-actions}
+        {--a|actions : Show only actions}
+        {--p|processes : Show only processes (deprecated, use --workflows)}
+        {--t|tasks : Show only tasks (deprecated, use --actions)}
         {--Q|queries : Show only queries}
         {--filter= : Filter by class name}';
 
@@ -37,12 +39,14 @@ class ShowBrainCommand extends Command
             $this->output,
         );
 
-        if ($this->input?->getOption('processes')) {
+        if ($this->input?->getOption('workflows') || $this->input?->getOption('processes')) {
             $printer->onlyProcesses();
+            $printer->onlyWorkflows();
         }
 
-        if ($this->input?->getOption('tasks')) {
+        if ($this->input?->getOption('actions') || $this->input?->getOption('tasks')) {
             $printer->onlyTasks();
+            $printer->onlyActions();
         }
 
         if ($this->input?->getOption('queries')) {

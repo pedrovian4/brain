@@ -12,6 +12,8 @@ use Symfony\Component\Console\Input\InputArgument;
  * Class TaskMakeCommand
  *
  * This command is designed to generate a new task class.
+ *
+ * @deprecated Use brain:make:action instead.
  */
 final class MakeTaskCommand extends BaseCommand
 {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Brain;
 
+use Brain\Actions\Console\MakeActionCommand;
 use Brain\Console\EjectCommand;
 use Brain\Console\RunBrainCommand;
 use Brain\Console\ShowBrainCommand;
@@ -11,6 +12,7 @@ use Brain\Processes\Console\MakeProcessCommand;
 use Brain\Queries\Console\MakeQueryCommand;
 use Brain\Tasks\Console\MakeTaskCommand;
 use Brain\Tests\Console\MakeTestCommand;
+use Brain\Workflows\Console\MakeWorkflowCommand;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
@@ -58,6 +60,8 @@ class BrainServiceProvider extends ServiceProvider
     private function registerCommands(): void
     {
         $this->commands([
+            MakeWorkflowCommand::class,
+            MakeActionCommand::class,
             MakeProcessCommand::class,
             MakeTaskCommand::class,
             MakeQueryCommand::class,
@@ -113,6 +117,28 @@ class BrainServiceProvider extends ServiceProvider
 
         foreach ($taskEvents as $event) {
             Event::listen($event, Tasks\Listeners\LogEventListener::class);
+        }
+
+        $workflowEvents = [
+            Workflows\Events\Processing::class,
+            Workflows\Events\Processed::class,
+            Workflows\Events\Error::class,
+        ];
+
+        foreach ($workflowEvents as $event) {
+            Event::listen($event, Workflows\Listeners\LogEventListener::class);
+        }
+
+        $actionEvents = [
+            Actions\Events\Processing::class,
+            Actions\Events\Processed::class,
+            Actions\Events\Cancelled::class,
+            Actions\Events\Skipped::class,
+            Actions\Events\Error::class,
+        ];
+
+        foreach ($actionEvents as $event) {
+            Event::listen($event, Actions\Listeners\LogEventListener::class);
         }
     }
 }

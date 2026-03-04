@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Brain\Console;
 
+use Brain\Action;
 use Brain\Console\Support\PropertyInput;
 use Brain\Console\Support\RunHistory;
 use Brain\Process;
 use Brain\SensitiveValue;
 use Brain\Task;
+use Brain\Workflow;
 use Illuminate\Console\Command;
 use Throwable;
 
@@ -94,12 +96,36 @@ class RunBrainCommand extends Command
         return self::SUCCESS;
     }
 
-    /** Collect all Processes and Tasks from the brain map. */
+    /** Collect all Workflows, Actions, Processes, and Tasks from the brain map. */
     private function collectTargets(BrainMap $brainMap): array
     {
         $targets = [];
 
         foreach ($brainMap->map as $domainData) {
+            foreach (data_get($domainData, 'workflows', []) as $workflow) {
+                $properties = $this->aggregateProcessProperties($workflow);
+
+                $targets[$workflow['fullName']] = [
+                    'class' => $workflow['fullName'],
+                    'name' => $workflow['name'],
+                    'type' => 'workflow',
+                    'properties' => $properties,
+                ];
+            }
+
+            foreach (data_get($domainData, 'actions', []) as $action) {
+                if ($action['type'] === 'workflow') {
+                    continue; // @codeCoverageIgnore
+                }
+
+                $targets[$action['fullName']] = [
+                    'class' => $action['fullName'],
+                    'name' => $action['name'],
+                    'type' => 'action',
+                    'properties' => $action['properties'] ?? [],
+                ];
+            }
+
             foreach (data_get($domainData, 'processes', []) as $process) {
                 $properties = $this->aggregateProcessProperties($process);
 
@@ -270,7 +296,7 @@ class RunBrainCommand extends Command
             return;
         }
 
-        if ($result instanceof Task || $result instanceof Process) {
+        if ($result instanceof Action || $result instanceof Workflow || $result instanceof Task || $result instanceof Process) {
             $result->finalize();
             $payload = (array) $result->payload;
 

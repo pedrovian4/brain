@@ -6,7 +6,11 @@ namespace Brain\Processes\Events;
 
 use Illuminate\Foundation\Events\Dispatchable;
 
-/** Base event for all process-related events. */
+/**
+ * Base event for all process-related events.
+ *
+ * @deprecated Use Brain\Workflows\Events\BaseEvent instead.
+ */
 class BaseEvent
 {
     use Dispatchable;

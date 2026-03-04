@@ -7,7 +7,11 @@ namespace Brain\Processes\Listeners;
 use Brain\Processes\Events\BaseEvent;
 use Illuminate\Support\Facades\Log;
 
-/** Listener that logs process lifecycle events. */
+/**
+ * Listener that logs process lifecycle events.
+ *
+ * @deprecated Use Brain\Workflows\Listeners\LogEventListener instead.
+ */
 class LogEventListener
 {
     /**

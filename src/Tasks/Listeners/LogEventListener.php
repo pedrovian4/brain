@@ -7,7 +7,11 @@ namespace Brain\Tasks\Listeners;
 use Brain\Tasks\Events\BaseEvent;
 use Illuminate\Support\Facades\Log;
 
-/** Listener that logs task lifecycle events. */
+/**
+ * Listener that logs task lifecycle events.
+ *
+ * @deprecated Use Brain\Actions\Listeners\LogEventListener instead.
+ */
 class LogEventListener
 {
     /**

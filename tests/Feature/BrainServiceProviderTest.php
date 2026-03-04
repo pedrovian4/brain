@@ -2,14 +2,18 @@
 
 declare(strict_types=1);
 
+use Brain\Actions\Console\MakeActionCommand;
 use Brain\BrainServiceProvider;
 use Brain\Process;
 use Brain\Processes\Console\MakeProcessCommand;
 use Brain\Queries\Console\MakeQueryCommand;
 use Brain\Tasks\Console\MakeTaskCommand;
+use Brain\Workflow;
+use Brain\Workflows\Console\MakeWorkflowCommand;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
+use Tests\Feature\Fixtures\SimpleAction;
 use Tests\Feature\Fixtures\SimpleTask;
 
 beforeEach(function (): void {
@@ -24,6 +28,8 @@ test('service provider registers all make commands', function (): void {
     expect($registeredCommands)->toContain('make:process');
     expect($registeredCommands)->toContain('make:task');
     expect($registeredCommands)->toContain('make:query');
+    expect($registeredCommands)->toContain('make:workflow');
+    expect($registeredCommands)->toContain('make:action');
 });
 
 test('registered commands are of correct instance type', function (): void {
@@ -33,6 +39,8 @@ test('registered commands are of correct instance type', function (): void {
     expect($commands['make:process'])->toBeInstanceOf(MakeProcessCommand::class);
     expect($commands['make:task'])->toBeInstanceOf(MakeTaskCommand::class);
     expect($commands['make:query'])->toBeInstanceOf(MakeQueryCommand::class);
+    expect($commands['make:workflow'])->toBeInstanceOf(MakeWorkflowCommand::class);
+    expect($commands['make:action'])->toBeInstanceOf(MakeActionCommand::class);
 });
 
 test('if config brain log is enabled needs to register listeners', function (): void {
@@ -103,6 +111,71 @@ test('if config brain log is not enabled dont register anything', function (): v
 
 });
 
+test('if config brain log is enabled needs to register workflow and action listeners', function (): void {
+    config()->set('brain.log', true);
+
+    $this->provider->register();
+
+    $workflowEvents = [
+        Brain\Workflows\Events\Processing::class,
+        Brain\Workflows\Events\Processed::class,
+        Brain\Workflows\Events\Error::class,
+    ];
+
+    $actionEvents = [
+        Brain\Actions\Events\Processing::class,
+        Brain\Actions\Events\Processed::class,
+        Brain\Actions\Events\Cancelled::class,
+        Brain\Actions\Events\Skipped::class,
+        Brain\Actions\Events\Error::class,
+    ];
+
+    $appListeners = app()->make('events')->getRawListeners();
+
+    foreach (array_merge($workflowEvents, $actionEvents) as $event) {
+        expect(array_keys($appListeners))
+            ->toContain($event);
+    }
+
+    foreach ($workflowEvents as $event) {
+        expect(data_get($appListeners, "{$event}.0"))
+            ->toBe(Brain\Workflows\Listeners\LogEventListener::class);
+    }
+
+    foreach ($actionEvents as $event) {
+        expect(data_get($appListeners, "{$event}.0"))
+            ->toBe(Brain\Actions\Listeners\LogEventListener::class);
+    }
+});
+
+test('if config brain log is not enabled dont register workflow or action listeners', function (): void {
+    config()->set('brain.log', false);
+
+    $this->provider->boot();
+
+    $workflowEvents = [
+        Brain\Workflows\Events\Processing::class,
+        Brain\Workflows\Events\Processed::class,
+        Brain\Workflows\Events\Error::class,
+    ];
+
+    $actionEvents = [
+        Brain\Actions\Events\Processing::class,
+        Brain\Actions\Events\Processed::class,
+        Brain\Actions\Events\Cancelled::class,
+        Brain\Actions\Events\Skipped::class,
+        Brain\Actions\Events\Error::class,
+    ];
+
+    $appListeners = Event::getRawListeners();
+
+    foreach (array_merge($workflowEvents, $actionEvents) as $event) {
+        expect(array_keys($appListeners))
+            ->not
+            ->toContain($event);
+    }
+});
+
 test('make sure the LogEventListener works', function (): void {
     config()->set('brain.log', false);
 
@@ -133,4 +206,34 @@ test('make sure the LogEventListener works', function (): void {
         ->once();
 
     $process->handle();
+});
+
+test('make sure the Workflow LogEventListener works', function (): void {
+    config()->set('brain.log', false);
+
+    $this->provider->boot();
+
+    Event::listen(Brain\Workflows\Events\Processing::class, Brain\Workflows\Listeners\LogEventListener::class);
+    Event::listen(Brain\Actions\Events\Processing::class, Brain\Actions\Listeners\LogEventListener::class);
+
+    $workflow = new Workflow(['key' => 'value']);
+    $workflow->addAction(SimpleAction::class);
+
+    $uuid = $workflow->uuid;
+
+    Log::shouldReceive('info')
+        ->with(
+            "(id: $uuid) Workflow Event: Brain\Workflows\Events\Processing",
+            Mockery::on(fn ($arg): bool => isset($arg['runId'], $arg['workflow'], $arg['payload'], $arg['timestamp']))
+        )
+        ->once();
+
+    Log::shouldReceive('info')
+        ->with(
+            "(id: $uuid) Action Event: Brain\Actions\Events\Processing",
+            Mockery::on(fn ($arg): bool => isset($arg['runId'], $arg['action'], $arg['workflow'], $arg['payload'], $arg['timestamp']))
+        )
+        ->once();
+
+    $workflow->handle();
 });

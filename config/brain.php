@@ -57,9 +57,14 @@ return [
     */
 
     'suffixes' => [
-        'task' => env('BRAIN_TASK_SUFFIX', 'Task'),
-        'process' => env('BRAIN_PROCESS_SUFFIX', 'Process'),
+        'workflow' => env('BRAIN_WORKFLOW_SUFFIX', env('BRAIN_PROCESS_SUFFIX', 'Workflow')),
+        'action' => env('BRAIN_ACTION_SUFFIX', env('BRAIN_TASK_SUFFIX', 'Action')),
         'query' => env('BRAIN_QUERY_SUFFIX', 'Query'),
+
+        /** @deprecated Use 'workflow' instead. */
+        'process' => env('BRAIN_PROCESS_SUFFIX', 'Process'),
+        /** @deprecated Use 'action' instead. */
+        'task' => env('BRAIN_TASK_SUFFIX', 'Task'),
     ],
 
     /*
