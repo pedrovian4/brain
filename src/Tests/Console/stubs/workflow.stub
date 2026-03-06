@@ -1,0 +1,10 @@
+<?php
+
+test('check list of actions', function (): void {
+    $workflow = new {{ namespace }}\{{ class }}();
+
+    expect($workflow->getActions())
+        ->toBe([
+            // List of the actions
+        ]);
+});
