@@ -135,6 +135,8 @@ class Process
             'timestamp' => microtime(true),
         ]);
 
+        $this->fireBroadcastEvent('started');
+
         try {
             $output = $this->chain
                 ? $this->runInChain($this->payload)
@@ -143,6 +145,8 @@ class Process
             $this->fireEvent(Processed::class, [
                 'timestamp' => microtime(true),
             ]);
+
+            $this->fireBroadcastEvent('finished');
         } catch (Exception $e) {
             $this->fireEvent(Error::class, [
                 'error' => $e->getMessage(),
@@ -162,6 +166,22 @@ class Process
         return $output;
     }
 
+    protected function startedBroadcastMessage(): array
+    {
+        return [
+            'message' => 'Process started',
+            'tasks_count' => count($this->tasks),
+        ];
+    }
+
+    protected function finishedBroadcastMessage(): array
+    {
+        return [
+            'message' => 'Process completed successfully',
+            'tasks_count' => count($this->tasks),
+        ];
+    }
+
     /**
      * Chain all tasks in the order that they were added, and
      * use Bus::chain to dispatch them.
@@ -170,7 +190,7 @@ class Process
     {
         $chain = Bus::chain($this->getChainedTasks());
 
-        if (($queue = $this->resolveQueue()) !== null && ($queue = $this->resolveQueue()) !== '' && ($queue = $this->resolveQueue()) !== '0') {
+        if (! in_array($queue = $this->resolveQueue(), [null, '', '0'], true)) {
             $chain->onQueue($queue);
         }
 
@@ -309,6 +329,26 @@ class Process
             $this->uuid,
             [],
             $meta
+        ));
+    }
+
+    private function fireBroadcastEvent(string $eventType): void
+    {
+        if (! \Illuminate\Support\Facades\Config::get('brain.broadcast.enabled') || ! \Illuminate\Support\Facades\Config::get('brain.broadcast.processes')) {
+            return;
+        }
+
+        $eventClass = $eventType === 'started' ? Broadcasting\Events\ProcessStarted::class : Broadcasting\Events\ProcessFinished::class;
+        $messageMethod = $eventType === 'started' ? 'startedBroadcastMessage' : 'finishedBroadcastMessage';
+
+        event(new $eventClass(
+            $this->uuid,
+            $this->name,
+            $this->$messageMethod(),
+            [
+                'timestamp' => microtime(true),
+                'payload_keys' => is_object($this->payload) ? array_keys(get_object_vars($this->payload)) : [],
+            ]
         ));
     }
 }
