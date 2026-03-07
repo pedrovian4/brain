@@ -50,6 +50,19 @@ BRAIN_USE_SUFFIX=true
 # php artisan make:process CreateUser → CreateUserProcess.php
 ```
 
+### Workflow/Action Naming
+
+Brain v2.0 introduces `Workflow` and `Action` as the primary class names, replacing `Process` and `Task`. The old names continue to work but are deprecated.
+
+Use the built-in migration command to automatically update your codebase:
+
+```bash
+php artisan brain:migrate --dry-run   # preview changes first
+php artisan brain:migrate             # apply the migration
+```
+
+This renames directories, files, imports, class references, and namespaces. See [Commands](/commands#migration) for full details.
+
 ### Enhanced Logging
 
 Built-in event system for tracking execution. See [Events & Logging](/events).

@@ -6,6 +6,7 @@ namespace Brain;
 
 use Brain\Actions\Console\MakeActionCommand;
 use Brain\Console\EjectCommand;
+use Brain\Console\MigrateCommand;
 use Brain\Console\RunBrainCommand;
 use Brain\Console\ShowBrainCommand;
 use Brain\Processes\Console\MakeProcessCommand;
@@ -69,6 +70,7 @@ class BrainServiceProvider extends ServiceProvider
             RunBrainCommand::class,
             MakeTestCommand::class,
             EjectCommand::class,
+            MigrateCommand::class,
         ]);
     }
 

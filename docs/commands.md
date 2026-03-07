@@ -117,3 +117,55 @@ php artisan brain:run --rerun
 ```
 
 Search through past runs, preview the saved payload, and re-execute.
+
+## Migration
+
+### `brain:migrate`
+
+Automatically migrate your codebase from Process/Task naming to Workflow/Action naming:
+
+```bash
+php artisan brain:migrate
+```
+
+The command scans your Brain directory and applies the following changes:
+
+- **Imports** — `use Brain\Process` → `use Brain\Workflow`, `use Brain\Task` → `use Brain\Action`
+- **Class inheritance** — `extends Process` → `extends Workflow`, `extends Task` → `extends Action`
+- **Task arrays** — `protected array $tasks = [` → `protected array $actions = [`
+- **Namespaces** — `\Processes\` → `\Workflows\`, `\Tasks\` → `\Actions\`
+- **File suffixes** — `CreateOrderProcess.php` → `CreateOrderWorkflow.php`, `ChargeUserTask.php` → `ChargeUserAction.php`
+- **Class references** — Updates all `::class` references across files
+- **Directories** — Renames `Processes/` → `Workflows/`, `Tasks/` → `Actions/`
+
+All replacements are case-insensitive, so `extends task` and `extends Task` are both handled.
+
+### Preview Mode
+
+Use `--dry-run` to preview all planned changes without applying them:
+
+```bash
+php artisan brain:migrate --dry-run
+```
+
+```
+ Brain Migration: Process/Task → Workflow/Action
+ ─────────────────────────────────────────────────
+ Directory: /app/Brain
+ Mode: dry-run (no changes will be made)
+
+ Files to update:
+   • Processes/CreateOrder.php
+   • Tasks/ChargeUser.php
+
+ Files to rename:
+   • CreateOrderProcess.php → CreateOrderWorkflow.php
+
+ Directories to rename:
+   • Processes → Workflows
+   • Tasks → Actions
+
+ Dry-run complete. No changes were made.
+```
+
+The command works with all configuration modes: root directory, flat structure (`root: null`), and domain-based organization.
