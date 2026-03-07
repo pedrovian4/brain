@@ -19,8 +19,7 @@ export default defineConfig({
         text: 'v3.x',
         items: [
           { text: 'v3.x (current)', link: '/getting-started' },
-          { text: 'v2.x', link: 'https://github.com/r2luna/brain/tree/2.2.0' },
-          { text: 'v1.x', link: 'https://github.com/r2luna/brain/tree/1.8.0' },
+          { text: 'v2.x', link: 'https://github.com/r2luna/brain/tree/2.x' },
         ],
       },
       {
