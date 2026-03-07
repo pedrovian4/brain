@@ -10,6 +10,8 @@ use Symfony\Component\Console\Input\InputArgument;
 
 /**
  * Class ProcessesMakeCommand
+ *
+ * @deprecated Use brain:make:workflow instead.
  */
 final class MakeProcessCommand extends BaseCommand
 {

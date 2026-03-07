@@ -31,6 +31,8 @@ use ReflectionException;
  *
  * Task class to be used as a base for all tasks.
  *
+ * @deprecated Use Brain\Action instead.
+ *
  * @property bool $cancelProcess
  */
 abstract class Task

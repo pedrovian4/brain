@@ -8,6 +8,7 @@ use Brain\Attributes\OnQueue;
 use Brain\Attributes\Sensitive;
 use Brain\Process;
 use Brain\Task;
+use Brain\Workflow;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Collection;
@@ -78,6 +79,8 @@ class BrainMap
                 ->flatMap(fn ($value) => [basename((string) $value) => $value])
                 ->map(fn ($domainPath): array => [
                     'path' => $domainPath,
+                    'workflows' => $this->loadWorkflowsFor($domainPath),
+                    'actions' => $this->loadActionsFor($domainPath),
                     'processes' => $this->loadProcessesFor($domainPath),
                     'tasks' => $this->loadTasksFor($domainPath),
                     'queries' => $this->loadQueriesFor($domainPath),
@@ -89,6 +92,8 @@ class BrainMap
             ->map(fn ($domainPath, $domain): array => [
                 'domain' => $domain,
                 'path' => $domainPath,
+                'workflows' => $this->loadWorkflowsFor($domainPath),
+                'actions' => $this->loadActionsFor($domainPath),
                 'processes' => $this->loadProcessesFor($domainPath),
                 'tasks' => $this->loadTasksFor($domainPath),
                 'queries' => $this->loadQueriesFor($domainPath),
@@ -218,6 +223,43 @@ class BrainMap
     {
         $reflection = $this->getReflectionClass($task);
         $isProcess = $reflection->isSubclassOf(Process::class);
+        $isWorkflow = $reflection->isSubclassOf(Workflow::class);
+
+        $onQueueAttr = $reflection->getAttributes(OnQueue::class);
+        $queueName = $onQueueAttr !== [] ? $onQueueAttr[0]->newInstance()->queue : null;
+
+        if ($isWorkflow) {
+            $type = 'workflow';
+        } elseif ($isProcess) {
+            $type = 'process';
+        } else {
+            $type = 'task';
+        }
+
+        $data = [
+            'name' => $reflection->getShortName(),
+            'fullName' => $reflection->name,
+            'queue' => $reflection->implementsInterface(ShouldQueue::class),
+            'onQueue' => $queueName,
+            'type' => $type,
+            'properties' => $this->getPropertiesFor($reflection),
+        ];
+
+        if ($isProcess) {
+            $data['tasks'] = $this->getProcessesTasks($reflection);
+        }
+
+        if ($isWorkflow) {
+            $data['tasks'] = $this->getWorkflowActions($reflection);
+        }
+
+        return $data;
+    }
+
+    private function getAction(SplFileInfo|string $action): array
+    {
+        $reflection = $this->getReflectionClass($action);
+        $isWorkflow = $reflection->isSubclassOf(Workflow::class);
 
         $onQueueAttr = $reflection->getAttributes(OnQueue::class);
         $queueName = $onQueueAttr !== [] ? $onQueueAttr[0]->newInstance()->queue : null;
@@ -227,15 +269,68 @@ class BrainMap
             'fullName' => $reflection->name,
             'queue' => $reflection->implementsInterface(ShouldQueue::class),
             'onQueue' => $queueName,
-            'type' => $isProcess ? 'process' : 'task',
+            'type' => $isWorkflow ? 'workflow' : 'action',
             'properties' => $this->getPropertiesFor($reflection),
         ];
 
-        if ($isProcess) {
-            $data['tasks'] = $this->getProcessesTasks($reflection);
+        if ($isWorkflow) {
+            $data['tasks'] = $this->getWorkflowActions($reflection);
         }
 
         return $data;
+    }
+
+    private function loadWorkflowsFor(string $domainPath): array
+    {
+        $path = $domainPath.DIRECTORY_SEPARATOR.'Workflows';
+
+        if (! is_dir($path)) {
+            return [];
+        }
+
+        return collect(File::files($path))
+            ->map(function (SplFileInfo $value): array {
+                $reflection = $this->getReflectionClass($value);
+                $hasChainProperty = $reflection->hasProperty('chain');
+                $chainProperty = $hasChainProperty ? $reflection->getProperty('chain') : null;
+                $chainValue = $chainProperty->getValue(new $reflection->name([]));
+                $value = $value->getPathname();
+
+                $onQueueAttr = $reflection->getAttributes(OnQueue::class);
+                $queueName = $onQueueAttr !== [] ? $onQueueAttr[0]->newInstance()->queue : null;
+
+                return [
+                    'name' => basename($value, '.php'),
+                    'fullName' => $reflection->name,
+                    'chain' => $chainValue,
+                    'onQueue' => $queueName,
+                    'properties' => $this->getPropertiesFor($reflection),
+                    'tasks' => $this->getWorkflowActions($reflection),
+                ];
+            })
+            ->toArray();
+    }
+
+    private function loadActionsFor(string $domainPath): array
+    {
+        $path = $domainPath.DIRECTORY_SEPARATOR.'Actions';
+
+        if (! is_dir($path)) {
+            return [];
+        }
+
+        return collect(File::files($path))
+            ->map(fn (SplFileInfo $action): array => $this->getAction($action))
+            ->toArray();
+    }
+
+    private function getWorkflowActions(ReflectionClass $workflow): array
+    {
+        return collect($workflow->getProperty('actions')->getValue(new $workflow->name([])))
+            ->map(fn (string $action): array => $this->getAction($action))
+            ->filter()
+            ->values()
+            ->toArray();
     }
 
     /**

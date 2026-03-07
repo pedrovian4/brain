@@ -20,6 +20,8 @@ class Printer
         'PROC' => 'blue',
         'TASK' => 'yellow',
         'QERY' => 'green',
+        'FLOW' => 'blue',
+        'ACTN' => 'yellow',
     ];
 
     /**
@@ -83,6 +85,22 @@ class Printer
         return $this;
     }
 
+    /** Restrict output to workflows only. */
+    public function onlyWorkflows(): self
+    {
+        $this->onlyTypes[] = 'workflow';
+
+        return $this;
+    }
+
+    /** Restrict output to actions only. */
+    public function onlyActions(): self
+    {
+        $this->onlyTypes[] = 'action';
+
+        return $this;
+    }
+
     /** Restrict output to queries only. */
     public function onlyQueries(): self
     {
@@ -127,6 +145,35 @@ class Printer
     private function collectDomainItems(array $domainData): array
     {
         $items = [];
+
+        if ($this->shouldCollect('workflow')) {
+            foreach (data_get($domainData, 'workflows', []) as $workflow) {
+                if ($this->matchesFilter($workflow['name'])) {
+                    $items[] = ['type' => 'workflow', 'data' => $workflow];
+
+                    continue;
+                }
+
+                if ($this->filter !== null) {
+                    $matchingActions = array_values(array_filter(
+                        data_get($workflow, 'tasks', []),
+                        fn (array $action): bool => $this->matchesFilter($action['name'])
+                    ));
+
+                    if ($matchingActions !== []) {
+                        $items[] = ['type' => 'workflow', 'data' => [...$workflow, 'tasks' => $matchingActions]];
+                    }
+                }
+            }
+        }
+
+        if ($this->shouldCollect('action')) {
+            foreach (data_get($domainData, 'actions', []) as $action) {
+                if ($this->matchesFilter($action['name'])) {
+                    $items[] = ['type' => 'action', 'data' => $action];
+                }
+            }
+        }
 
         if ($this->shouldCollect('process')) {
             foreach (data_get($domainData, 'processes', []) as $process) {
@@ -228,6 +275,8 @@ class Printer
         }
 
         match ($item['type']) {
+            'workflow' => $this->addWorkflowLine($item['data'], $prefix, $childPrefix, $prefixLen),
+            'action' => $this->addActionLine($item['data'], $prefix, $childPrefix, $prefixLen),
             'process' => $this->addProcessLine($item['data'], $prefix, $childPrefix, $prefixLen),
             'task' => $this->addTaskLine($item['data'], $prefix, $childPrefix, $prefixLen),
             'query' => $this->addQueryLine($item['data'], $prefix, $prefixLen),
@@ -261,6 +310,56 @@ class Printer
     }
 
     /**
+     * Adds a single workflow line.
+     */
+    private function addWorkflowLine(array $workflow, string $prefix, string $childPrefix, int $prefixLen): void
+    {
+        $workflowName = data_get($workflow, 'name');
+        $status = $workflow['chain'] ? ' chained' : '';
+
+        $fixedLen = $prefixLen + 4 + 2 + mb_strlen((string) $workflowName) + 1 + mb_strlen($status);
+        $dotCount = max($this->terminalWidth - $fixedLen, 0);
+        $dots = str_repeat('·', $dotCount);
+
+        $this->lines[] = [
+            sprintf(
+                '%s<fg=%s;options=bold>%s</>  <fg=white>%s</><fg=#6C7280> %s%s</>',
+                $prefix, $this->elemColors['FLOW'], 'FLOW',
+                $workflowName, $dots, $status
+            ),
+        ];
+
+        if ($this->output->isVerbose() || ($this->onlyTypes !== [] && $this->filter !== null)) {
+            $this->addProcessTasks($workflow, $childPrefix, $prefixLen, $prefixLen);
+        }
+    }
+
+    /**
+     * Adds a single action line.
+     */
+    private function addActionLine(array $action, string $prefix, string $childPrefix, int $prefixLen): void
+    {
+        $actionName = $action['name'];
+        $status = $action['queue'] ? ' queued' : '';
+
+        $fixedLen = $prefixLen + 4 + 2 + mb_strlen((string) $actionName) + 1 + mb_strlen($status);
+        $dotCount = max($this->terminalWidth - $fixedLen, 0);
+        $dots = str_repeat('·', $dotCount);
+
+        $this->lines[] = [
+            sprintf(
+                '%s<fg=%s;options=bold>%s</>  <fg=white>%s</><fg=#6C7280> %s%s</>',
+                $prefix, $this->elemColors['ACTN'], 'ACTN',
+                $actionName, $dots, $status
+            ),
+        ];
+
+        if ($this->output->isVeryVerbose()) {
+            $this->addProperties($action, $childPrefix, $prefixLen + 4 + 2 + 3);
+        }
+    }
+
+    /**
      * Adds sub-tasks of a process with tree connectors.
      */
     private function addProcessTasks(array $process, string $parentChildPrefix, int $parentPrefixLen, int $prefixVisualWidth): void
@@ -281,7 +380,9 @@ class Printer
             $indentSpaces = str_repeat(' ', $nameCol);
 
             [$color, $type] = match ($task['type']) {
+                'workflow' => [$this->elemColors['FLOW'], 'W'],
                 'process' => [$this->elemColors['PROC'], 'P'],
+                'action' => [$this->elemColors['ACTN'], 'A'],
                 default => [$this->elemColors['TASK'], 'T'],
             };
 
@@ -305,7 +406,7 @@ class Printer
             $subtaskChildPrefix = $parentChildPrefix.$indentSpaces.$continuation;
             $subtaskPrefixVisualWidth = $prefixVisualWidth + $nameCol + 4;
 
-            if ($task['type'] === 'process' && ! empty($task['tasks'])) {
+            if (($task['type'] === 'process' || $task['type'] === 'workflow') && ! empty($task['tasks'])) {
                 $this->addProcessTasks($task, $subtaskChildPrefix, 0, $subtaskPrefixVisualWidth);
             } elseif ($this->output->isVeryVerbose()) {
                 $this->addProperties($task, $subtaskChildPrefix, 3);

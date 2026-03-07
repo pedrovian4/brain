@@ -1,0 +1,22 @@
+<?php
+
+declare(strict_types = 1);
+
+namespace {{ namespace }};
+
+use Brain\Action;
+
+/**
+ * Action {{ class }}
+ *
+ * @property-read string $example
+ */
+class {{ class }} extends Action
+{
+    public function handle(): self
+    {
+        //
+
+        return $this;
+    }
+}

@@ -9,7 +9,11 @@ use Brain\Tasks\Events\Error as TasksError;
 use Illuminate\Support\Facades\Context;
 use Throwable;
 
-/** Middleware that finalizes a task after the pipeline completes. */
+/**
+ * Middleware that finalizes a task after the pipeline completes.
+ *
+ * @deprecated Use Brain\Actions\Middleware\FinalizeActionMiddleware instead.
+ */
 final class FinalizeTaskMiddleware
 {
     /**

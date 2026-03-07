@@ -1,0 +1,8 @@
+<?php
+
+test('check action', function (): void {
+    $action = App\Brain\Domain\ExampleAction::dispatchSync();
+
+    expect($action)->example
+        ->toBeTrue();
+});

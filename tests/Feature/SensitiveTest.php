@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Brain\Action;
 use Brain\Attributes\Sensitive;
 use Brain\SensitiveValue;
 use Brain\Task;
@@ -9,7 +10,9 @@ use Brain\Tasks\Events\Processing;
 use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\Event;
 use Tests\Feature\Fixtures\SensitiveProcess;
+use Tests\Feature\Fixtures\SensitiveUserAction;
 use Tests\Feature\Fixtures\SensitiveUserTask;
+use Tests\Feature\Fixtures\SensitiveWorkflow;
 
 // ── Sensitive Attribute ──
 
@@ -167,4 +170,69 @@ it('deduplicates sensitive keys when process and task declare the same key', fun
     $keys = SensitiveUserTask::getSensitiveKeys();
 
     expect($keys)->toEqualCanonicalizing(['password', 'credit_card', 'api_key']);
+});
+
+// ── Action Sensitive Attribute ──
+
+it('wraps sensitive payload keys in SensitiveValue during Action construction', function (): void {
+    $action = SensitiveUserAction::dispatchSync([
+        'email' => 'john@example.com',
+        'password' => 'secret123',
+        'credit_card' => '4111111111111111',
+    ]);
+
+    expect($action->payload->password)->toBeInstanceOf(SensitiveValue::class)
+        ->and($action->payload->credit_card)->toBeInstanceOf(SensitiveValue::class)
+        ->and($action->payload->email)->toBe('john@example.com');
+});
+
+it('auto-wraps when setting a sensitive key via __set on Action', function (): void {
+    $action = SensitiveUserAction::dispatchSync([
+        'email' => 'john@example.com',
+        'password' => 'secret123',
+        'credit_card' => '4111111111111111',
+    ]);
+
+    $action->password = 'new_password';
+
+    expect($action->payload->password)->toBeInstanceOf(SensitiveValue::class)
+        ->and($action->password)->toBe('new_password');
+});
+
+it('merges workflow-level and action-level sensitive keys', function (): void {
+    Context::add('brain.sensitive_keys', ['token']);
+
+    $keys = SensitiveUserAction::getSensitiveKeys();
+
+    expect($keys)->toContain('password')
+        ->and($keys)->toContain('credit_card')
+        ->and($keys)->toContain('token');
+});
+
+it('returns empty sensitive keys for Action without #[Sensitive]', function (): void {
+    class NoSensitiveAction extends Action
+    {
+        public function handle(): self
+        {
+            return $this;
+        }
+    }
+
+    expect(NoSensitiveAction::getSensitiveKeys())->toBe([]);
+});
+
+// ── Workflow-level Sensitive inheritance ──
+
+it('inherits sensitive keys from the workflow to actions without #[Sensitive]', function (): void {
+    $workflow = new SensitiveWorkflow([
+        'email' => 'john@example.com',
+        'password' => 'secret123',
+        'credit_card' => '4111111111111111',
+    ]);
+
+    $result = $workflow->handle();
+
+    expect($result->password)->toBeInstanceOf(SensitiveValue::class)
+        ->and($result->credit_card)->toBeInstanceOf(SensitiveValue::class)
+        ->and($result->email)->toBe('john@example.com');
 });

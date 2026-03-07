@@ -27,6 +27,8 @@ describe('load testsuite', function (): void {
             'Example' => [
                 'domain' => 'Example',
                 'path' => $basePath.'/tests/Feature/Console/../Fixtures/Brain/Example',
+                'workflows' => [],
+                'actions' => [],
                 'processes' => [
                     [
                         'name' => 'ExampleProcess',
@@ -100,6 +102,8 @@ describe('load testsuite', function (): void {
             'Example2' => [
                 'domain' => 'Example2',
                 'path' => $basePath.'/tests/Feature/Console/../Fixtures/Brain/Example2',
+                'workflows' => [],
+                'actions' => [],
                 'processes' => [
                     [
                         'name' => 'ExampleProcess2',
@@ -149,6 +153,41 @@ describe('load testsuite', function (): void {
             'Example3' => [
                 'domain' => 'Example3',
                 'path' => $basePath.'/tests/Feature/Console/../Fixtures/Brain/Example3',
+                'workflows' => [
+                    [
+                        'name' => 'ExampleWorkflow',
+                        'fullName' => Tests\Feature\Fixtures\Brain\Example3\Workflows\ExampleWorkflow::class,
+                        'chain' => false,
+                        'onQueue' => null,
+                        'properties' => [],
+                        'tasks' => [
+                            [
+                                'name' => 'ExampleAction',
+                                'fullName' => Tests\Feature\Fixtures\Brain\Example3\Actions\ExampleAction::class,
+                                'queue' => false,
+                                'onQueue' => null,
+                                'type' => 'action',
+                                'properties' => [
+                                    ['name' => 'email', 'type' => 'string', 'direction' => 'output', 'sensitive' => false],
+                                    ['name' => 'paymentId', 'type' => 'int', 'direction' => 'output', 'sensitive' => false],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                'actions' => [
+                    [
+                        'name' => 'ExampleAction',
+                        'fullName' => Tests\Feature\Fixtures\Brain\Example3\Actions\ExampleAction::class,
+                        'queue' => false,
+                        'onQueue' => null,
+                        'type' => 'action',
+                        'properties' => [
+                            ['name' => 'email', 'type' => 'string', 'direction' => 'output', 'sensitive' => false],
+                            ['name' => 'paymentId', 'type' => 'int', 'direction' => 'output', 'sensitive' => false],
+                        ],
+                    ],
+                ],
                 'processes' => [],
                 'tasks' => [],
                 'queries' => [],

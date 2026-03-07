@@ -6,7 +6,11 @@ namespace Brain\Tasks\Events;
 
 use Illuminate\Foundation\Events\Dispatchable;
 
-/** Base event for all task-related events. */
+/**
+ * Base event for all task-related events.
+ *
+ * @deprecated Use Brain\Actions\Events\BaseEvent instead.
+ */
 class BaseEvent
 {
     use Dispatchable;
