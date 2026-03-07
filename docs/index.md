@@ -3,8 +3,8 @@ layout: home
 
 hero:
   name: Brain
-  text: Process-Driven Architecture for Laravel
-  tagline: Organize your business logic with Processes, Tasks, and Queries.
+  text: Workflow-Driven Architecture for Laravel
+  tagline: Organize your business logic with Workflows, Actions, and Queries.
   actions:
     - theme: brand
       text: Get Started
@@ -18,11 +18,11 @@ features:
     title: Domain-Driven Structure
     details: Organize your application into clear domains with proper architecture — optional and flexible.
   - icon: 🔄
-    title: Process Orchestration
-    details: Chain multiple tasks in a database transaction. Support for queues, sub-processes, and conditional execution.
+    title: Workflow Orchestration
+    details: Chain multiple actions in a database transaction. Support for queues, sub-workflows, and conditional execution.
   - icon: ⚡
-    title: Reusable Tasks
-    details: Build small, focused units of work. Reuse them across processes, validate inputs, and queue when needed.
+    title: Reusable Actions
+    details: Build small, focused units of work. Reuse them across workflows, validate inputs, and queue when needed.
   - icon: 🔍
     title: Query Objects
     details: Dedicated read-only classes for fetching data. Clean, testable, and easy to invoke.

@@ -1,6 +1,6 @@
 # Events & Logging
 
-Brain dispatches events throughout the lifecycle of processes and tasks. These can be used for logging, monitoring, or triggering additional actions.
+Brain dispatches events throughout the lifecycle of workflows and actions. These can be used for logging, monitoring, or triggering additional logic.
 
 ## Enabling Logging
 
@@ -14,37 +14,37 @@ Or in `config/brain.php`:
 'log' => env('BRAIN_LOG_ENABLED', true),
 ```
 
-## Process Events
+## Workflow Events
 
 | Event | When |
 |-------|------|
-| `Brain\Processes\Events\Processing` | Process starts executing |
-| `Brain\Processes\Events\Processed` | Process completes successfully |
-| `Brain\Processes\Events\Error` | Process encounters an error |
+| `Brain\Workflows\Events\Processing` | Workflow starts executing |
+| `Brain\Workflows\Events\Processed` | Workflow completes successfully |
+| `Brain\Workflows\Events\Error` | Workflow encounters an error |
 
 Each event contains:
 
-- `process` — The process class name
+- `process` — The workflow class name
 - `runProcessId` — A unique ID for this execution
-- `payload` — The data passed to the process
+- `payload` — The data passed to the workflow
 - `meta` — Additional metadata
 
-## Task Events
+## Action Events
 
 | Event | When |
 |-------|------|
-| `Brain\Tasks\Events\Processing` | Task starts executing |
-| `Brain\Tasks\Events\Processed` | Task completes successfully |
-| `Brain\Tasks\Events\Cancelled` | Task is cancelled via `cancelProcess()` |
-| `Brain\Tasks\Events\Skipped` | Task is skipped (`runIf()` returns false) |
-| `Brain\Tasks\Events\Error` | Task encounters an error |
+| `Brain\Actions\Events\Processing` | Action starts executing |
+| `Brain\Actions\Events\Processed` | Action completes successfully |
+| `Brain\Actions\Events\Cancelled` | Action is cancelled via `cancelProcess()` |
+| `Brain\Actions\Events\Skipped` | Action is skipped (`runIf()` returns false) |
+| `Brain\Actions\Events\Error` | Action encounters an error |
 
 Each event contains:
 
-- `task` — The task class name
-- `payload` — The data passed to the task
-- `process` — The parent process class name (if applicable)
-- `runProcessId` — The process execution ID (if applicable)
+- `task` — The action class name
+- `payload` — The data passed to the action
+- `process` — The parent workflow class name (if applicable)
+- `runProcessId` — The workflow execution ID (if applicable)
 - `meta` — Additional metadata
 
 ## Custom Listeners
@@ -52,14 +52,14 @@ Each event contains:
 Register listeners in your `EventServiceProvider`:
 
 ```php
-use Brain\Processes\Events\Processed as ProcessCompleted;
-use Brain\Tasks\Events\Error as TaskFailed;
+use Brain\Workflows\Events\Processed as WorkflowCompleted;
+use Brain\Actions\Events\Error as ActionFailed;
 
 protected $listen = [
-    ProcessCompleted::class => [
+    WorkflowCompleted::class => [
         NotifyAdmin::class,
     ],
-    TaskFailed::class => [
+    ActionFailed::class => [
         AlertOpsTeam::class,
     ],
 ];
@@ -68,10 +68,10 @@ protected $listen = [
 Or use closures:
 
 ```php
-use Brain\Tasks\Events\Processed;
+use Brain\Actions\Events\Processed;
 
 Event::listen(Processed::class, function ($event) {
-    logger()->info('Task completed', [
+    logger()->info('Action completed', [
         'task'    => $event->task,
         'process' => $event->process,
     ]);

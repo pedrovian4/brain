@@ -1,16 +1,16 @@
 # Queues
 
-Brain integrates with Laravel's queue system. Tasks and Processes can be dispatched to the queue by implementing `ShouldQueue`.
+Brain integrates with Laravel's queue system. Actions and Workflows can be dispatched to the queue by implementing `ShouldQueue`.
 
-## Queueable Tasks
+## Queueable Actions
 
-Implement `ShouldQueue` on your task:
+Implement `ShouldQueue` on your action:
 
 ```php
-use Brain\Task;
+use Brain\Action;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class SendWelcomeEmail extends Task implements ShouldQueue
+class SendWelcomeEmail extends Action implements ShouldQueue
 {
     public function handle(): self
     {
@@ -22,10 +22,10 @@ class SendWelcomeEmail extends Task implements ShouldQueue
 
 ## Delayed Execution
 
-Use the `runIn()` method to delay a queued task:
+Use the `runIn()` method to delay a queued action:
 
 ```php
-class SendFollowUp extends Task implements ShouldQueue
+class SendFollowUp extends Action implements ShouldQueue
 {
     protected function runIn(): int|Carbon|null
     {
@@ -46,11 +46,11 @@ Use the `#[OnQueue]` attribute to assign a specific queue:
 
 ```php
 use Brain\Attributes\OnQueue;
-use Brain\Task;
+use Brain\Action;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
 #[OnQueue('emails')]
-class SendWelcomeEmail extends Task implements ShouldQueue
+class SendWelcomeEmail extends Action implements ShouldQueue
 {
     public function handle(): self
     {
@@ -60,37 +60,37 @@ class SendWelcomeEmail extends Task implements ShouldQueue
 ```
 
 ::: danger
-Do **not** declare `public string $queue = 'my-queue'` on a Task — this causes a PHP fatal error because Laravel's `Queueable` trait already declares `$queue` without a type hint. Always use `#[OnQueue]` instead.
+Do **not** declare `public string $queue = 'my-queue'` on an Action — this causes a PHP fatal error because Laravel's `Queueable` trait already declares `$queue` without a type hint. Always use `#[OnQueue]` instead.
 :::
 
-## Process-Level Queue
+## Workflow-Level Queue
 
-When `#[OnQueue]` is applied to a Process:
+When `#[OnQueue]` is applied to a Workflow:
 
-1. The Process itself is dispatched to that queue (if it implements `ShouldQueue`)
-2. All queued child tasks **inherit** the Process queue — unless the task defines its own `#[OnQueue]`
+1. The Workflow itself is dispatched to that queue (if it implements `ShouldQueue`)
+2. All queued child actions **inherit** the Workflow queue — unless the action defines its own `#[OnQueue]`
 
 ```php
 #[OnQueue('strava')]
-class SyncActivities extends Process implements ShouldQueue
+class SyncActivities extends Workflow implements ShouldQueue
 {
-    protected array $tasks = [
+    protected array $actions = [
         FetchActivities::class,   // ShouldQueue → runs on "strava" (inherited)
-        SaveActivities::class,    // sync task → unaffected
+        SaveActivities::class,    // sync action → unaffected
         NotifyUser::class,        // #[OnQueue('emails')] → runs on "emails"
     ];
 }
 ```
 
 ::: tip
-A task's own `#[OnQueue]` always takes precedence over the process-level queue.
+An action's own `#[OnQueue]` always takes precedence over the workflow-level queue.
 :::
 
 ## Execution Patterns
 
-### All tasks on the same queue
+### All actions on the same queue
 
-The process and every queued task run on `strava`:
+The workflow and every queued action run on `strava`:
 
 ```mermaid
 flowchart LR
@@ -104,9 +104,9 @@ flowchart LR
     end
 ```
 
-### Process queued, tasks synchronous
+### Workflow queued, actions synchronous
 
-The process is queued, but tasks run synchronously inside the job:
+The workflow is queued, but actions run synchronously inside the job:
 
 ```mermaid
 flowchart LR
@@ -122,7 +122,7 @@ flowchart LR
 
 ### Mixed sync and queued
 
-Some tasks run inside the process, others are dispatched to queues:
+Some actions run inside the workflow, others are dispatched to queues:
 
 ```mermaid
 flowchart LR

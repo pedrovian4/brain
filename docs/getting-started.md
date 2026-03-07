@@ -18,49 +18,49 @@ php artisan vendor:publish --provider="Brain\BrainServiceProvider"
 
 This creates `config/brain.php` where you can adjust all settings.
 
-## Create Your First Process
+## Create Your First Workflow
 
 ```bash
-php artisan make:process CreateUser
+php artisan make:workflow CreateUser
 ```
 
-This generates a Process class at `app/Brain/Processes/CreateUser.php`:
+This generates a Workflow class at `app/Brain/Workflows/CreateUser.php`:
 
 ```php
 <?php
 
-namespace App\Brain\Processes;
+namespace App\Brain\Workflows;
 
-use Brain\Process;
+use Brain\Workflow;
 
-class CreateUser extends Process
+class CreateUser extends Workflow
 {
-    protected array $tasks = [
+    protected array $actions = [
         //
     ];
 }
 ```
 
-## Create Your First Task
+## Create Your First Action
 
 ```bash
-php artisan make:task RegisterUser
+php artisan make:action RegisterUser
 ```
 
-This generates a Task class at `app/Brain/Tasks/RegisterUser.php`:
+This generates an Action class at `app/Brain/Actions/RegisterUser.php`:
 
 ```php
 <?php
 
-namespace App\Brain\Tasks;
+namespace App\Brain\Actions;
 
-use Brain\Task;
+use Brain\Action;
 
 /**
  * @property-read string $name
  * @property-read string $email
  */
-class RegisterUser extends Task
+class RegisterUser extends Action
 {
     public function handle(): self
     {
@@ -73,12 +73,12 @@ class RegisterUser extends Task
 
 ## Wire Them Together
 
-Add the task to your process:
+Add the action to your workflow:
 
 ```php
-class CreateUser extends Process
+class CreateUser extends Workflow
 {
-    protected array $tasks = [
+    protected array $actions = [
         RegisterUser::class,
     ];
 }
@@ -93,10 +93,10 @@ CreateUser::dispatchSync([
 ]);
 ```
 
-That's it! The process will run `RegisterUser` inside a database transaction. If any task throws an exception, the entire transaction is rolled back.
+That's it! The workflow will run `RegisterUser` inside a database transaction. If any action throws an exception, the entire transaction is rolled back.
 
 ## Next Steps
 
 - Learn about [Configuration](/configuration) options
-- Dive into [Processes](/processes), [Tasks](/tasks), and [Queries](/queries)
+- Dive into [Workflows](/workflows), [Actions](/actions), and [Queries](/queries)
 - Explore [Queue support](/queues) for async execution

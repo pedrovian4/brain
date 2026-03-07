@@ -12,7 +12,7 @@ php artisan vendor:publish --provider="Brain\BrainServiceProvider"
 
 ### Root Directory
 
-Defines the main directory where processes, tasks, and queries are created.
+Defines the main directory where workflows, actions, and queries are created.
 
 ```bash
 BRAIN_ROOT=Brain
@@ -20,9 +20,9 @@ BRAIN_ROOT=Brain
 
 | Value   | Result                                  |
 |---------|-----------------------------------------|
-| `Brain` | `app/Brain/Processes/CreateUser.php`    |
-| `Domain`| `app/Domain/Processes/CreateUser.php`   |
-| *(empty)* | `app/Processes/CreateUser.php`        |
+| `Brain` | `app/Brain/Workflows/CreateUser.php`    |
+| `Domain`| `app/Domain/Workflows/CreateUser.php`   |
+| *(empty)* | `app/Workflows/CreateUser.php`        |
 
 Default: `Brain`
 
@@ -36,15 +36,15 @@ BRAIN_USE_DOMAINS=false
 
 When enabled:
 ```
-app/Brain/Users/Processes/CreateUser.php
-app/Brain/Users/Tasks/RegisterUser.php
-app/Brain/Payments/Processes/ChargeCustomer.php
+app/Brain/Users/Workflows/CreateUser.php
+app/Brain/Users/Actions/RegisterUser.php
+app/Brain/Payments/Workflows/ChargeCustomer.php
 ```
 
 When disabled (default):
 ```
-app/Brain/Processes/CreateUser.php
-app/Brain/Tasks/RegisterUser.php
+app/Brain/Workflows/CreateUser.php
+app/Brain/Actions/RegisterUser.php
 ```
 
 ### Use Suffix
@@ -55,21 +55,21 @@ Automatically appends type suffixes to class names.
 BRAIN_USE_SUFFIX=false
 ```
 
-When enabled, `CreateUser` becomes `CreateUserProcess`, `RegisterUser` becomes `RegisterUserTask`, etc.
+When enabled, `CreateUser` becomes `CreateUserWorkflow`, `RegisterUser` becomes `RegisterUserAction`, etc.
 
 ### Custom Suffixes
 
 Customize the suffix per type when `use_suffix` is enabled:
 
 ```bash
-BRAIN_TASK_SUFFIX=Task
-BRAIN_PROCESS_SUFFIX=Process
+BRAIN_WORKFLOW_SUFFIX=Workflow
+BRAIN_ACTION_SUFFIX=Action
 BRAIN_QUERY_SUFFIX=Query
 ```
 
 ### Logging
 
-Enables logging for all processes and tasks. See [Events & Logging](/events) for details.
+Enables logging for all workflows and actions. See [Events & Logging](/events) for details.
 
 ```bash
 BRAIN_LOG_ENABLED=false
@@ -85,8 +85,8 @@ return [
     'use_domains' => env('BRAIN_USE_DOMAINS', false),
     'use_suffix'  => env('BRAIN_USE_SUFFIX', false),
     'suffixes'    => [
-        'task'    => env('BRAIN_TASK_SUFFIX', 'Task'),
-        'process' => env('BRAIN_PROCESS_SUFFIX', 'Process'),
+        'workflow' => env('BRAIN_WORKFLOW_SUFFIX', 'Workflow'),
+        'action'  => env('BRAIN_ACTION_SUFFIX', 'Action'),
         'query'   => env('BRAIN_QUERY_SUFFIX', 'Query'),
     ],
     'log'         => env('BRAIN_LOG_ENABLED', false),

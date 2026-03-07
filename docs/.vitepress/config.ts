@@ -2,7 +2,7 @@ import { defineConfig } from 'vitepress'
 
 export default defineConfig({
   title: 'Brain',
-  description: 'A process-driven architecture for your Laravel application',
+  description: 'A workflow-driven architecture for your Laravel application',
   base: '/brain/',
 
   head: [
@@ -15,6 +15,14 @@ export default defineConfig({
     nav: [
       { text: 'Guide', link: '/getting-started' },
       { text: 'Changelog', link: '/changelog' },
+      {
+        text: 'v3.x',
+        items: [
+          { text: 'v3.x (current)', link: '/getting-started' },
+          { text: 'v2.x', link: 'https://github.com/r2luna/brain/tree/2.2.0/docs' },
+          { text: 'v1.x', link: 'https://github.com/r2luna/brain/tree/1.8.0/docs' },
+        ],
+      },
       {
         text: 'Links',
         items: [
@@ -37,8 +45,8 @@ export default defineConfig({
       {
         text: 'Core Concepts',
         items: [
-          { text: 'Processes', link: '/processes' },
-          { text: 'Tasks', link: '/tasks' },
+          { text: 'Workflows', link: '/workflows' },
+          { text: 'Actions', link: '/actions' },
           { text: 'Queries', link: '/queries' },
         ],
       },
@@ -59,7 +67,7 @@ export default defineConfig({
       {
         text: 'Upgrading',
         items: [
-          { text: 'Upgrade to v2.0', link: '/upgrading' },
+          { text: 'Upgrade Guide', link: '/upgrading' },
           { text: 'Changelog', link: '/changelog' },
         ],
       },

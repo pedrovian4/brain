@@ -6,7 +6,7 @@ Use the `#[Sensitive]` attribute to mark payload properties that should be autom
 
 ```php
 use Brain\Attributes\Sensitive;
-use Brain\Task;
+use Brain\Action;
 
 /**
  * @property-read string $email
@@ -14,7 +14,7 @@ use Brain\Task;
  * @property string $credit_card
  */
 #[Sensitive('password', 'credit_card')]
-class CreateUser extends Task
+class CreateUser extends Action
 {
     public function handle(): self
     {
@@ -29,24 +29,24 @@ class CreateUser extends Task
 
 Sensitive values are internally wrapped in a `SensitiveValue` object:
 
-- **Inside the task** — `$this->password` returns the real value transparently
+- **Inside the action** — `$this->password` returns the real value transparently
 - **In logs** — Replaced with `**********`
 - **In JSON** — Replaced with `**********`
 - **In debug output** — Replaced with `**********`
 - **In `brain:show -vv`** — Shows a `[sensitive]` indicator
 
-## Process-Level Inheritance
+## Workflow-Level Inheritance
 
-When `#[Sensitive]` is applied to a Process, **all child tasks** automatically inherit the sensitive keys — even if the tasks themselves don't declare the attribute:
+When `#[Sensitive]` is applied to a Workflow, **all child actions** automatically inherit the sensitive keys — even if the actions themselves don't declare the attribute:
 
 ```php
 use Brain\Attributes\Sensitive;
-use Brain\Process;
+use Brain\Workflow;
 
 #[Sensitive('password', 'credit_card')]
-class CreateUser extends Process
+class CreateUser extends Workflow
 {
-    protected array $tasks = [
+    protected array $actions = [
         ValidateInput::class,     // password & credit_card redacted
         ChargeCustomer::class,    // password & credit_card redacted
         SendConfirmation::class,  // password & credit_card redacted
@@ -54,13 +54,13 @@ class CreateUser extends Process
 }
 ```
 
-Task-level and process-level keys are merged and deduplicated. A task can define additional sensitive keys beyond what the process specifies:
+Action-level and workflow-level keys are merged and deduplicated. An action can define additional sensitive keys beyond what the workflow specifies:
 
 ```php
 #[Sensitive('password')]
-class CreateUser extends Process
+class CreateUser extends Workflow
 {
-    protected array $tasks = [
+    protected array $actions = [
         ChargeCustomer::class, // has #[Sensitive('cvv')] → both password and cvv are redacted
     ];
 }

@@ -1,11 +1,11 @@
-# Tasks
+# Actions
 
-A **Task** is a single unit of work that receives a payload and implements a `handle()` method.
+An **Action** is a single unit of work that receives a payload and implements a `handle()` method.
 
-## Creating a Task
+## Creating an Action
 
 ```bash
-php artisan make:task RegisterUser
+php artisan make:action RegisterUser
 ```
 
 ## Basic Structure
@@ -13,15 +13,15 @@ php artisan make:task RegisterUser
 ```php
 <?php
 
-namespace App\Brain\Tasks;
+namespace App\Brain\Actions;
 
-use Brain\Task;
+use Brain\Action;
 
 /**
  * @property-read string $name
  * @property-read string $email
  */
-class RegisterUser extends Task
+class RegisterUser extends Action
 {
     public function handle(): self
     {
@@ -30,7 +30,7 @@ class RegisterUser extends Task
             'email' => $this->email,
         ]);
 
-        // Pass data to subsequent tasks
+        // Pass data to subsequent actions
         $this->userId = $user->id;
 
         return $this;
@@ -63,22 +63,22 @@ Use `@property-read` for input properties and `@property` for output properties:
 
 Brain validates that at least one expected key exists in the payload at construction.
 
-### Passing Data Between Tasks
+### Passing Data Between Actions
 
-Set new properties on the task to make them available to subsequent tasks in a process:
+Set new properties on the action to make them available to subsequent actions in a workflow:
 
 ```php
-class RegisterUser extends Task
+class RegisterUser extends Action
 {
     public function handle(): self
     {
         $user = User::create([...]);
-        $this->userId = $user->id; // available in next task
+        $this->userId = $user->id; // available in next action
         return $this;
     }
 }
 
-class SendWelcomeEmail extends Task
+class SendWelcomeEmail extends Action
 {
     public function handle(): self
     {
@@ -91,7 +91,7 @@ class SendWelcomeEmail extends Task
 
 ## Standalone Usage
 
-Tasks can be dispatched independently, outside of a process:
+Actions can be dispatched independently, outside of a workflow:
 
 ```php
 RegisterUser::dispatchSync([
@@ -102,13 +102,13 @@ RegisterUser::dispatchSync([
 
 ## Conditional Execution
 
-Use `runIf()` to conditionally skip a task within a process:
+Use `runIf()` to conditionally skip an action within a workflow:
 
 ```php
 /**
  * @property-read int $amount
  */
-class ApplyDiscount extends Task
+class ApplyDiscount extends Action
 {
     protected function runIf(): bool
     {
@@ -123,7 +123,7 @@ class ApplyDiscount extends Task
 }
 ```
 
-When `runIf()` returns `false`, the task is skipped and a `Skipped` event is dispatched.
+When `runIf()` returns `false`, the action is skipped and a `Skipped` event is dispatched.
 
 ## Validation
 
@@ -134,7 +134,7 @@ Define validation rules for the payload using the `rules()` method:
  * @property-read User $user
  * @property string $message
  */
-class SendNotification extends Task
+class SendNotification extends Action
 {
     public function rules(): array
     {
@@ -154,12 +154,12 @@ class SendNotification extends Task
 
 Rules override the default validation based on `@property-read` annotations.
 
-## Cancel Process
+## Cancel Workflow
 
-From inside a task, you can cancel the entire process:
+From inside an action, you can cancel the entire workflow:
 
 ```php
-class CheckEligibility extends Task
+class CheckEligibility extends Action
 {
     public function handle(): self
     {
@@ -173,14 +173,14 @@ class CheckEligibility extends Task
 ```
 
 ::: warning
-`cancelProcess()` does not work with queued tasks — only synchronous tasks within a process.
+`cancelProcess()` does not work with queued actions — only synchronous actions within a workflow.
 :::
 
 ## Helper Methods
 
-- `toArray()` — Returns the task payload as an array.
+- `toArray()` — Returns the action payload as an array.
 
 ```php
-$task = RegisterUser::dispatchSync(['name' => 'John', 'email' => 'john@example.com']);
-$task->toArray(); // ['name' => 'John', 'email' => 'john@example.com']
+$action = RegisterUser::dispatchSync(['name' => 'John', 'email' => 'john@example.com']);
+$action->toArray(); // ['name' => 'John', 'email' => 'john@example.com']
 ```
